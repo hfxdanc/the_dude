@@ -1,0 +1,84 @@
+app-id: org.flatpak.TheDude
+base: org.winehq.Wine
+base-version: stable-23.08
+runtime: org.freedesktop.Platform
+runtime-version: &runtime-version '23.08'
+sdk: org.freedesktop.Sdk
+command: dude.sh
+
+finish-args:
+  - --allow=multiarch
+  - --env=LD_LIBRARY_PATH=/app/lib:/app/lib32
+  - --env=WINEARCH=win32
+  - --env=WINEDLLOVERRIDES=mscoree,mshtml="d"
+  - --env=WINEDLLPATH=/app/dlls/lib32:/app/dlls/lib
+  - --env=WINEPREFIX=/var/data
+  # Allow access to add desktop icon file
+  - --filesystem=~/.local/share/icons/hicolor/256x256/apps:create
+  - --filesystem=~/.local/share/icons/hicolor/256x256/apps/org.flatpak.TheDude.png:rw
+  - --filesystem=xdg-documents
+  - --filesystem=xdg-download
+  - --filesystem=xdg-run/gvfsd
+  - --share=ipc
+  - --share=network
+  - --socket=wayland
+  - --socket=x11
+
+add-extensions:
+  org.freedesktop.Platform.Compat.i386:
+    directory: lib/i386-linux-gnu
+    version: *runtime-version
+
+modules:
+  - name: TheDude
+    buildsystem: simple
+    build-options:
+      strip: false
+    build-commands:
+      - install -Dm755 dude-installer.sh ${FLATPAK_DEST}/bin/dude-installer.sh
+      - install -Dm755 dude.sh ${FLATPAK_DEST}/bin/dude.sh
+      - install -Dm644 ${FLATPAK_ID}.metainfo.xml ${FLATPAK_DEST}/share/metainfo/
+      - install -Dm644 ${FLATPAK_ID}.desktop ${FLATPAK_DEST}/share/applications/
+      - |
+        install -d ${FLATPAK_DEST}/share/icons/hicolor/256x256/apps
+        gdk-pixbuf-thumbnailer -s 256 default.png \
+          ${FLATPAK_DEST}/share/icons/hicolor/256x256/apps/${FLATPAK_ID}.png
+    sources:
+      - type: script
+        dest-filename: dude.sh
+        commands:
+          - |
+            #!/bin/sh
+
+            if ! [ -e "${WINEPREFIX}/drive_c/Program Files/Dude/dude.exe" ] ; then
+              # shellcheck disable=SC3046,SC1091
+              source "/app/bin/dude-installer.sh"
+              # shellcheck disable=SC2181
+              if [ $? -ne 0 ]; then
+                zenity --question \
+                  --text="Clean up application directory" \
+                  --title="Application installation failed" \
+                  --default-cancel
+
+                # shellcheck disable=SC2181
+                if [ $? -eq 0 ]; then
+                  rm -rf "${WINEPREFIX}/drive_c/Program Files/Dude"
+                fi
+
+                exit 1
+              fi
+            fi
+
+            wine "${WINEPREFIX}/drive_c/Program Files/Dude/dude.exe"
+      - type: file
+        path: dude-installer.sh
+      - type: file
+        dest-filename: org.flatpak.TheDude.metainfo.xml
+        path: TheDude.metainfo.xml
+      - type: file
+        dest-filename: org.flatpak.TheDude.desktop
+        path: TheDude.desktop
+      - type: file
+        path: icons/default.png
+
+# vi: set wrap:

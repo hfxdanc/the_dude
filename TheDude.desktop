@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+
+Name=TheDude
+Comment=MikroTik The Dude client
+Categories=System;Monitor;
+
+Icon=org.flatpak.TheDude
+Exec=dude.sh
+DBusActivatable=false
+Terminal=false

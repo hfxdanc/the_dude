@@ -1,0 +1,11 @@
+.flatpak-builder/
+build-dir/
+*~
+*.BAK
+*.SAV
+*.orig
+*.swp
+TheDude.metainfo.xml
+TheDude.version
+dude-installer.sh
+latest-stable.rss
